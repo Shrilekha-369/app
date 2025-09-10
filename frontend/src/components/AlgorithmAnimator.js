@@ -24,12 +24,12 @@ ChartJS.register(
 
 const AlgorithmAnimator = ({ api, isLoading, setIsLoading, setError }) => {
   const [numPoints, setNumPoints] = useState(20);
-  const [selectedAlgorithm, setSelectedAlgorithm] = useState('jarvis');
   const [results, setResults] = useState(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [animationSpeed, setAnimationSpeed] = useState(1000); // milliseconds
-  const [stepDescription, setStepDescription] = useState('');
+  const [jarvisStepDescription, setJarvisStepDescription] = useState('');
+  const [grahamStepDescription, setGrahamStepDescription] = useState('');
   
   const animationInterval = useRef(null);
 
