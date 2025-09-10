@@ -363,6 +363,61 @@ const ConvexHullVisualizer = ({ api, isLoading, setIsLoading, setError }) => {
             </div>
           </div>
 
+          {/* Algorithm Results Display */}
+          <div className="control-panel">
+            <h3 className="text-lg font-semibold mb-4">Algorithm Results</h3>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Jarvis March Results */}
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <h4 className="font-semibold text-blue-800 mb-3 flex items-center">
+                  <span className="w-3 h-3 bg-blue-600 rounded-full mr-2"></span>
+                  Jarvis March
+                </h4>
+                <div className="space-y-2">
+                  <div className="flex items-center">
+                    <span className="font-medium text-blue-700 w-20">Hull size:</span>
+                    <span className="font-mono text-blue-900">{results.jarvis_result.hull_size}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-blue-700">Coordinates:</span>
+                    <div className="mt-1 p-2 bg-white rounded border font-mono text-sm text-blue-900 max-h-32 overflow-y-auto">
+                      {results.jarvis_result.hull.map((coord, index) => (
+                        <span key={index}>
+                          ({coord[0]}, {coord[1]}){index < results.jarvis_result.hull.length - 1 ? ', ' : ''}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Graham Scan Results */}
+              <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+                <h4 className="font-semibold text-red-800 mb-3 flex items-center">
+                  <span className="w-3 h-3 bg-red-600 rounded-full mr-2"></span>
+                  Graham Scan
+                </h4>
+                <div className="space-y-2">
+                  <div className="flex items-center">
+                    <span className="font-medium text-red-700 w-20">Hull size:</span>
+                    <span className="font-mono text-red-900">{results.graham_result.hull_size}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-red-700">Coordinates:</span>
+                    <div className="mt-1 p-2 bg-white rounded border font-mono text-sm text-red-900 max-h-32 overflow-y-auto">
+                      {results.graham_result.hull.map((coord, index) => (
+                        <span key={index}>
+                          ({coord[0]}, {coord[1]}){index < results.graham_result.hull.length - 1 ? ', ' : ''}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Additional Metrics */}
           <div className="control-panel">
             <h3 className="text-lg font-semibold mb-4">Performance Metrics</h3>
