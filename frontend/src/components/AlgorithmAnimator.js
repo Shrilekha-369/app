@@ -293,7 +293,7 @@ const AlgorithmAnimator = ({ api, isLoading, setIsLoading, setError }) => {
     return { datasets };
   };
 
-  const chartOptions = {
+  const jarvisChartOptions = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -302,7 +302,7 @@ const AlgorithmAnimator = ({ api, isLoading, setIsLoading, setError }) => {
       },
       title: {
         display: true,
-        text: `${selectedAlgorithm === 'jarvis' ? 'Jarvis March' : 'Graham Scan'} Animation - Step ${currentStep + 1}`,
+        text: `Jarvis March - Step ${currentStep + 1}`,
         font: {
           size: 16,
           weight: 'bold',
@@ -328,32 +328,52 @@ const AlgorithmAnimator = ({ api, isLoading, setIsLoading, setError }) => {
     },
   };
 
-  const steps = getCurrentSteps();
-  const totalSteps = steps.length;
+  const grahamChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top',
+      },
+      title: {
+        display: true,
+        text: `Graham Scan - Step ${currentStep + 1}`,
+        font: {
+          size: 16,
+          weight: 'bold',
+        },
+      },
+    },
+    scales: {
+      x: {
+        type: 'linear',
+        position: 'bottom',
+        title: {
+          display: true,
+          text: 'X Coordinate',
+        },
+      },
+      y: {
+        type: 'linear',
+        title: {
+          display: true,
+          text: 'Y Coordinate',
+        },
+      },
+    },
+  };
+
+  const jarvisSteps = getJarvisSteps();
+  const grahamSteps = getGrahamSteps();
+  const maxSteps = getMaxSteps();
 
   return (
     <div className="space-y-6">
       {/* Control Panel */}
       <div className="control-panel">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">Step-by-Step Animation</h2>
+        <h2 className="text-xl font-bold text-gray-900 mb-6">Side-by-Side Algorithm Animation</h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="control-group">
-            <label className="control-label">Algorithm</label>
-            <select
-              value={selectedAlgorithm}
-              onChange={(e) => {
-                setSelectedAlgorithm(e.target.value);
-                setCurrentStep(0);
-                stopAnimation();
-              }}
-              className="control-input"
-            >
-              <option value="jarvis">Jarvis March</option>
-              <option value="graham">Graham Scan</option>
-            </select>
-          </div>
-
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <div className="control-group">
             <label className="control-label">Number of Points</label>
             <input
@@ -394,7 +414,7 @@ const AlgorithmAnimator = ({ api, isLoading, setIsLoading, setError }) => {
               <button
                 onClick={playAnimation}
                 className="play-button"
-                disabled={totalSteps === 0}
+                disabled={maxSteps === 0}
               >
                 {isPlaying ? (
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -421,19 +441,19 @@ const AlgorithmAnimator = ({ api, isLoading, setIsLoading, setError }) => {
 
               <div className="flex-1 text-center">
                 <div className="text-sm text-gray-600 mb-1">
-                  Step {currentStep + 1} of {totalSteps}
+                  Step {currentStep + 1} of {maxSteps}
                 </div>
                 <div className="progress-bar">
                   <div 
                     className="progress-fill"
-                    style={{ width: `${totalSteps > 0 ? ((currentStep + 1) / totalSteps) * 100 : 0}%` }}
+                    style={{ width: `${maxSteps > 0 ? ((currentStep + 1) / maxSteps) * 100 : 0}%` }}
                   />
                 </div>
               </div>
 
               <button 
                 onClick={nextStep} 
-                disabled={currentStep >= totalSteps - 1}
+                disabled={currentStep >= maxSteps - 1}
                 className="control-button secondary"
               >
                 Next →
@@ -455,85 +475,141 @@ const AlgorithmAnimator = ({ api, isLoading, setIsLoading, setError }) => {
             </div>
           </div>
 
-          {/* Step Description */}
-          {stepDescription && (
-            <div className="control-panel">
-              <h3 className="font-semibold text-gray-900 mb-2">Current Step:</h3>
-              <p className="text-gray-700 bg-blue-50 p-3 rounded-lg border border-blue-200">
-                {stepDescription}
-              </p>
+          {/* Side-by-Side Charts */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Jarvis March Chart */}
+            <div className="chart-container">
+              <Scatter data={prepareJarvisAnimationData()} options={jarvisChartOptions} />
             </div>
-          )}
 
-          {/* Chart */}
-          <div className="chart-container">
-            <Scatter data={prepareAnimationData()} options={chartOptions} />
+            {/* Graham Scan Chart */}
+            <div className="chart-container">
+              <Scatter data={prepareGrahamAnimationData()} options={grahamChartOptions} />
+            </div>
           </div>
 
-          {/* Algorithm Info */}
+          {/* Step Descriptions */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Jarvis March Description */}
+            <div className="control-panel">
+              <h3 className="font-semibold text-blue-600 mb-2 flex items-center">
+                <span className="w-3 h-3 bg-blue-600 rounded-full mr-2"></span>
+                Jarvis March - Step {Math.min(currentStep + 1, jarvisSteps.length)}
+              </h3>
+              <p className="text-gray-700 bg-blue-50 p-3 rounded-lg border border-blue-200 min-h-[60px]">
+                {jarvisStepDescription || 'Waiting for algorithm to start...'}
+              </p>
+            </div>
+
+            {/* Graham Scan Description */}
+            <div className="control-panel">
+              <h3 className="font-semibold text-red-600 mb-2 flex items-center">
+                <span className="w-3 h-3 bg-red-600 rounded-full mr-2"></span>
+                Graham Scan - Step {Math.min(currentStep + 1, grahamSteps.length)}
+              </h3>
+              <p className="text-gray-700 bg-red-50 p-3 rounded-lg border border-red-200 min-h-[60px]">
+                {grahamStepDescription || 'Waiting for algorithm to start...'}
+              </p>
+            </div>
+          </div>
+
+          {/* Algorithm Comparison Stats */}
           <div className="algorithm-comparison">
             <div className="algorithm-card">
-              <div className="algorithm-header">
-                <div className="algorithm-title">
-                  {selectedAlgorithm === 'jarvis' ? 'Jarvis March' : 'Graham Scan'}
-                </div>
-                <div className="algorithm-subtitle">Step-by-Step Analysis</div>
+              <div className="algorithm-header" style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)' }}>
+                <div className="algorithm-title">Jarvis March Progress</div>
+                <div className="algorithm-subtitle">Gift Wrapping Algorithm</div>
               </div>
               <div className="algorithm-content">
                 <div className="space-y-3">
                   <div className="flex justify-between">
-                    <span>Total Steps:</span>
-                    <span>{totalSteps}</span>
-                  </div>
-                  <div className="flex justify-between">
                     <span>Current Step:</span>
-                    <span>{currentStep + 1}</span>
+                    <span>{Math.min(currentStep + 1, jarvisSteps.length)} / {jarvisSteps.length}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Progress:</span>
-                    <span>{totalSteps > 0 ? Math.round(((currentStep + 1) / totalSteps) * 100) : 0}%</span>
+                    <span>{jarvisSteps.length > 0 ? Math.round((Math.min(currentStep + 1, jarvisSteps.length) / jarvisSteps.length) * 100) : 0}%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Total Steps:</span>
+                    <span>{jarvisSteps.length}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Execution Time:</span>
+                    <span className="font-mono">
+                      {(results.jarvis_result.execution_time * 1000).toFixed(3)}ms
+                    </span>
                   </div>
                   <div className="text-sm text-gray-600">
-                    {selectedAlgorithm === 'jarvis' ? (
-                      <>
-                        <strong>Algorithm:</strong> Wraps around the points like a gift, checking each point to find the most counter-clockwise edge at each step.
-                      </>
-                    ) : (
-                      <>
-                        <strong>Algorithm:</strong> Sorts points and builds lower/upper hulls by maintaining the convex property using cross products.
-                      </>
-                    )}
+                    <strong>Strategy:</strong> Wraps around points like a gift, checking each point to find the most counter-clockwise edge.
                   </div>
                 </div>
               </div>
             </div>
 
             <div className="algorithm-card">
-              <div className="algorithm-header">
-                <div className="algorithm-title">Performance Stats</div>
-                <div className="algorithm-subtitle">Current Algorithm</div>
+              <div className="algorithm-header" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)' }}>
+                <div className="algorithm-title">Graham Scan Progress</div>
+                <div className="algorithm-subtitle">Polar Sorting Algorithm</div>
               </div>
               <div className="algorithm-content">
                 <div className="space-y-3">
                   <div className="flex justify-between">
+                    <span>Current Step:</span>
+                    <span>{Math.min(currentStep + 1, grahamSteps.length)} / {grahamSteps.length}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Progress:</span>
+                    <span>{grahamSteps.length > 0 ? Math.round((Math.min(currentStep + 1, grahamSteps.length) / grahamSteps.length) * 100) : 0}%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Total Steps:</span>
+                    <span>{grahamSteps.length}</span>
+                  </div>
+                  <div className="flex justify-between">
                     <span>Execution Time:</span>
                     <span className="font-mono">
-                      {(getCurrentResult()?.execution_time * 1000).toFixed(3)}ms
+                      {(results.graham_result.execution_time * 1000).toFixed(3)}ms
                     </span>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Hull Size:</span>
-                    <span>{getCurrentResult()?.hull_size}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Input Points:</span>
-                    <span>{results.points.length}</span>
-                  </div>
                   <div className="text-sm text-gray-600">
-                    <strong>Complexity:</strong> {selectedAlgorithm === 'jarvis' ? 'O(nh)' : 'O(n log n)'}
+                    <strong>Strategy:</strong> Sorts points and builds lower/upper hulls by maintaining convex property using cross products.
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Algorithm Comparison Info */}
+          <div className="control-panel">
+            <h3 className="text-lg font-semibold mb-4">Direct Comparison</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="stat-card">
+                <div className="stat-value">
+                  {results.performance_comparison.jarvis_faster ? 'Jarvis' : 'Graham'}
+                </div>
+                <div className="stat-label">Faster Algorithm</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-value">
+                  {(results.performance_comparison.time_difference * 1000).toFixed(3)}ms
+                </div>
+                <div className="stat-label">Time Difference</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-value">
+                  {results.performance_comparison.hull_sizes_match ? '✓ Match' : '✗ Differ'}
+                </div>
+                <div className="stat-label">Hull Results</div>
+              </div>
+            </div>
+            <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-red-50 rounded-lg border">
+              <p className="text-sm text-gray-700">
+                <strong>Educational Insight:</strong> Watch how Jarvis March methodically wraps around the points like 
+                gift wrapping, while Graham Scan efficiently builds the hull by sorting points and using a stack-based approach. 
+                Notice how Graham Scan often requires fewer steps due to its O(n log n) sorting phase, while Jarvis March's 
+                step count depends on the hull size (h), resulting in O(nh) complexity.
+              </p>
             </div>
           </div>
         </>
