@@ -145,13 +145,13 @@ const AlgorithmAnimator = ({ api, isLoading, setIsLoading, setError }) => {
     };
   }, []);
 
-  // Prepare chart data for animation
-  const prepareAnimationData = () => {
+  // Prepare chart data for Jarvis March animation
+  const prepareJarvisAnimationData = () => {
     if (!results) return { datasets: [] };
 
     const { points } = results;
-    const steps = getCurrentSteps();
-    const currentStepData = steps[currentStep] || {};
+    const jarvisSteps = getJarvisSteps();
+    const currentStepData = jarvisSteps[currentStep] || {};
     
     // All points
     const allPointsData = points.map(([x, y]) => ({ x, y }));
@@ -168,103 +168,126 @@ const AlgorithmAnimator = ({ api, isLoading, setIsLoading, setError }) => {
       }
     ];
 
-    // Add algorithm-specific visualization
-    if (selectedAlgorithm === 'jarvis') {
-      // Current hull being built
-      if (currentStepData.hull_so_far && currentStepData.hull_so_far.length > 0) {
-        const hullData = currentStepData.hull_so_far.map(([x, y]) => ({ x, y }));
-        datasets.push({
-          label: 'Hull So Far',
-          data: hullData,
-          backgroundColor: 'rgba(59, 130, 246, 1)',
-          borderColor: 'rgba(59, 130, 246, 1)',
-          borderWidth: 3,
-          pointRadius: 6,
-          showLine: true,
-          fill: false,
-          tension: 0,
-        });
-      }
+    // Current hull being built
+    if (currentStepData.hull_so_far && currentStepData.hull_so_far.length > 0) {
+      const hullData = currentStepData.hull_so_far.map(([x, y]) => ({ x, y }));
+      datasets.push({
+        label: 'Hull So Far',
+        data: hullData,
+        backgroundColor: 'rgba(59, 130, 246, 1)',
+        borderColor: 'rgba(59, 130, 246, 1)',
+        borderWidth: 3,
+        pointRadius: 6,
+        showLine: true,
+        fill: false,
+        tension: 0,
+      });
+    }
 
-      // Candidate edge
-      if (currentStepData.type === 'candidate' && currentStepData.from_point && currentStepData.to_point) {
-        datasets.push({
-          label: 'Candidate Edge',
-          data: [
-            { x: currentStepData.from_point[0], y: currentStepData.from_point[1] },
-            { x: currentStepData.to_point[0], y: currentStepData.to_point[1] }
-          ],
-          backgroundColor: 'rgba(255, 165, 0, 0.8)',
-          borderColor: 'rgba(255, 165, 0, 1)',
-          borderWidth: 2,
-          borderDash: [3, 3],
-          pointRadius: 5,
-          showLine: true,
-          fill: false,
-        });
-      }
+    // Candidate edge
+    if (currentStepData.type === 'candidate' && currentStepData.from_point && currentStepData.to_point) {
+      datasets.push({
+        label: 'Candidate Edge',
+        data: [
+          { x: currentStepData.from_point[0], y: currentStepData.from_point[1] },
+          { x: currentStepData.to_point[0], y: currentStepData.to_point[1] }
+        ],
+        backgroundColor: 'rgba(255, 165, 0, 0.8)',
+        borderColor: 'rgba(255, 165, 0, 1)',
+        borderWidth: 2,
+        borderDash: [3, 3],
+        pointRadius: 5,
+        showLine: true,
+        fill: false,
+      });
+    }
 
-      // Chosen edge
-      if (currentStepData.type === 'chosen' && currentStepData.from_point && currentStepData.to_point) {
-        datasets.push({
-          label: 'Chosen Edge',
-          data: [
-            { x: currentStepData.from_point[0], y: currentStepData.from_point[1] },
-            { x: currentStepData.to_point[0], y: currentStepData.to_point[1] }
-          ],
-          backgroundColor: 'rgba(34, 197, 94, 1)',
-          borderColor: 'rgba(34, 197, 94, 1)',
-          borderWidth: 4,
-          pointRadius: 7,
-          showLine: true,
-          fill: false,
-        });
-      }
-    } else {
-      // Graham Scan visualization
-      if (currentStepData.stack && currentStepData.stack.length > 0) {
-        const stackData = currentStepData.stack.map(([x, y]) => ({ x, y }));
-        datasets.push({
-          label: `${currentStepData.hull_part || 'Stack'}`,
-          data: stackData,
-          backgroundColor: currentStepData.hull_part === 'lower' ? 'rgba(59, 130, 246, 1)' : 'rgba(239, 68, 68, 1)',
-          borderColor: currentStepData.hull_part === 'lower' ? 'rgba(59, 130, 246, 1)' : 'rgba(239, 68, 68, 1)',
-          borderWidth: 3,
-          pointRadius: 6,
-          showLine: true,
-          fill: false,
-          tension: 0,
-        });
-      }
+    // Chosen edge
+    if (currentStepData.type === 'chosen' && currentStepData.from_point && currentStepData.to_point) {
+      datasets.push({
+        label: 'Chosen Edge',
+        data: [
+          { x: currentStepData.from_point[0], y: currentStepData.from_point[1] },
+          { x: currentStepData.to_point[0], y: currentStepData.to_point[1] }
+        ],
+        backgroundColor: 'rgba(34, 197, 94, 1)',
+        borderColor: 'rgba(34, 197, 94, 1)',
+        borderWidth: 4,
+        pointRadius: 7,
+        showLine: true,
+        fill: false,
+      });
+    }
 
-      // Highlight current point being processed
-      if (currentStepData.current_point || currentStepData.added_point) {
-        const point = currentStepData.current_point || currentStepData.added_point;
-        datasets.push({
-          label: 'Current Point',
-          data: [{ x: point[0], y: point[1] }],
-          backgroundColor: 'rgba(255, 165, 0, 1)',
-          borderColor: 'rgba(255, 165, 0, 1)',
-          pointRadius: 8,
-          showLine: false,
-        });
-      }
+    return { datasets };
+  };
 
-      // Final hull for last step
-      if (currentStepData.type === 'final' && currentStepData.final_hull) {
-        const finalHullData = [...currentStepData.final_hull, currentStepData.final_hull[0]].map(([x, y]) => ({ x, y }));
-        datasets.push({
-          label: 'Final Hull',
-          data: finalHullData,
-          backgroundColor: 'rgba(34, 197, 94, 0.1)',
-          borderColor: 'rgba(34, 197, 94, 1)',
-          borderWidth: 4,
-          pointRadius: 7,
-          showLine: true,
-          fill: false,
-          tension: 0,
-        });
+  // Prepare chart data for Graham Scan animation
+  const prepareGrahamAnimationData = () => {
+    if (!results) return { datasets: [] };
+
+    const { points } = results;
+    const grahamSteps = getGrahamSteps();
+    const currentStepData = grahamSteps[currentStep] || {};
+    
+    // All points
+    const allPointsData = points.map(([x, y]) => ({ x, y }));
+
+    const datasets = [
+      {
+        label: 'All Points',
+        data: allPointsData,
+        backgroundColor: 'rgba(107, 114, 128, 0.8)',
+        borderColor: 'rgba(107, 114, 128, 1)',
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        showLine: false,
       }
+    ];
+
+    // Current stack
+    if (currentStepData.stack && currentStepData.stack.length > 0) {
+      const stackData = currentStepData.stack.map(([x, y]) => ({ x, y }));
+      datasets.push({
+        label: `${currentStepData.hull_part || 'Stack'}`,
+        data: stackData,
+        backgroundColor: currentStepData.hull_part === 'lower' ? 'rgba(59, 130, 246, 1)' : 'rgba(239, 68, 68, 1)',
+        borderColor: currentStepData.hull_part === 'lower' ? 'rgba(59, 130, 246, 1)' : 'rgba(239, 68, 68, 1)',
+        borderWidth: 3,
+        pointRadius: 6,
+        showLine: true,
+        fill: false,
+        tension: 0,
+      });
+    }
+
+    // Highlight current point being processed
+    if (currentStepData.current_point || currentStepData.added_point) {
+      const point = currentStepData.current_point || currentStepData.added_point;
+      datasets.push({
+        label: 'Current Point',
+        data: [{ x: point[0], y: point[1] }],
+        backgroundColor: 'rgba(255, 165, 0, 1)',
+        borderColor: 'rgba(255, 165, 0, 1)',
+        pointRadius: 8,
+        showLine: false,
+      });
+    }
+
+    // Final hull for last step
+    if (currentStepData.type === 'final' && currentStepData.final_hull) {
+      const finalHullData = [...currentStepData.final_hull, currentStepData.final_hull[0]].map(([x, y]) => ({ x, y }));
+      datasets.push({
+        label: 'Final Hull',
+        data: finalHullData,
+        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+        borderColor: 'rgba(34, 197, 94, 1)',
+        borderWidth: 4,
+        pointRadius: 7,
+        showLine: true,
+        fill: false,
+        tension: 0,
+      });
     }
 
     return { datasets };
