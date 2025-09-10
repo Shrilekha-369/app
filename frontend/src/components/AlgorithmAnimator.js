@@ -52,14 +52,19 @@ const AlgorithmAnimator = ({ api, isLoading, setIsLoading, setError }) => {
     }
   };
 
-  const getCurrentSteps = () => {
+  const getJarvisSteps = () => {
     if (!results) return [];
-    return selectedAlgorithm === 'jarvis' ? results.jarvis_result.steps : results.graham_result.steps;
+    return results.jarvis_result.steps;
   };
 
-  const getCurrentResult = () => {
-    if (!results) return null;
-    return selectedAlgorithm === 'jarvis' ? results.jarvis_result : results.graham_result;
+  const getGrahamSteps = () => {
+    if (!results) return [];
+    return results.graham_result.steps;
+  };
+
+  const getMaxSteps = () => {
+    if (!results) return 0;
+    return Math.max(getJarvisSteps().length, getGrahamSteps().length);
   };
 
   // Animation controls
@@ -69,8 +74,8 @@ const AlgorithmAnimator = ({ api, isLoading, setIsLoading, setError }) => {
       return;
     }
 
-    const steps = getCurrentSteps();
-    if (currentStep >= steps.length - 1) {
+    const maxSteps = getMaxSteps();
+    if (currentStep >= maxSteps - 1) {
       setCurrentStep(0);
     }
 
@@ -78,9 +83,9 @@ const AlgorithmAnimator = ({ api, isLoading, setIsLoading, setError }) => {
     animationInterval.current = setInterval(() => {
       setCurrentStep(prev => {
         const nextStep = prev + 1;
-        if (nextStep >= steps.length) {
+        if (nextStep >= maxSteps) {
           stopAnimation();
-          return steps.length - 1;
+          return maxSteps - 1;
         }
         return nextStep;
       });
@@ -101,8 +106,8 @@ const AlgorithmAnimator = ({ api, isLoading, setIsLoading, setError }) => {
   };
 
   const nextStep = () => {
-    const steps = getCurrentSteps();
-    if (currentStep < steps.length - 1) {
+    const maxSteps = getMaxSteps();
+    if (currentStep < maxSteps - 1) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -113,13 +118,23 @@ const AlgorithmAnimator = ({ api, isLoading, setIsLoading, setError }) => {
     }
   };
 
-  // Update step description
+  // Update step descriptions
   useEffect(() => {
-    const steps = getCurrentSteps();
-    if (steps.length > 0 && currentStep < steps.length) {
-      setStepDescription(steps[currentStep].step_description || '');
+    const jarvisSteps = getJarvisSteps();
+    const grahamSteps = getGrahamSteps();
+    
+    if (jarvisSteps.length > 0 && currentStep < jarvisSteps.length) {
+      setJarvisStepDescription(jarvisSteps[currentStep].step_description || '');
+    } else {
+      setJarvisStepDescription('Algorithm completed');
     }
-  }, [currentStep, selectedAlgorithm, results]);
+    
+    if (grahamSteps.length > 0 && currentStep < grahamSteps.length) {
+      setGrahamStepDescription(grahamSteps[currentStep].step_description || '');
+    } else {
+      setGrahamStepDescription('Algorithm completed');
+    }
+  }, [currentStep, results]);
 
   // Cleanup interval on unmount
   useEffect(() => {
